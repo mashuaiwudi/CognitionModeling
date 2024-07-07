@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Search Test</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000000;
+        }
+        #test-container {
+            width: 250px;
+            height: 250px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            background-color: #000000;
+            /* border: 1px solid #ccc; */
+        }
+        .grid-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        .grid-item img {
+            width: 50px;
+            height: 50px;
+        }
+
+        #start-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="test-container"></div>
+
+    <img src="aims.png" id="instruction" style="display: block;">
+    
+    <button id="start-button">开始</button>
+
+    <!-- 预加载图像 -->
+    <img src="target.png" alt="Target" style="display: none;">
+    <img src="distractor1.png" alt="Distractor 1" style="display: none;">
+    <img src="distractor2.png" alt="Distractor 2" style="display: none;">
+    <img src="empty.png" alt="Empty" style="display: none;">
+
+    
+    <script>
+        const results = [];
+        let testIndex = 0;
+        let targetPresent = false;
+        let startTime = 0;
+
+        const targetTrials = [0, 1, 2, 3];
+        const controlTrials = Array(8).fill(null);
+        const trialOrder = [...targetTrials, ...controlTrials];
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function generateLetters() {
+            const container = document.getElementById('test-container');
+            container.innerHTML = '';
+
+            const positions = [];
+            for (let i = 0; i < 25; i++) {
+                positions.push(i);
+            }
+            shuffle(positions);
+
+            targetPresent = trialOrder[testIndex] !== null;
+
+            const usedPositions = new Set();
+
+            if (targetPresent) {
+                const targetIndex = positions.pop();
+                usedPositions.add(targetIndex);
+                const targetElement = document.createElement('div');
+                targetElement.className = 'grid-item';
+                targetElement.innerHTML = '<img src="target.png" alt="Target">';
+                container.appendChild(targetElement);
+            }
+
+            for (let i = 0; i < 15; i++) {
+                if (usedPositions.size >= 25) break;
+
+                let position = positions.pop();
+                while (usedPositions.has(position)) {
+                    position = positions.pop();
+                }
+                usedPositions.add(position);
+
+                const letterElement = document.createElement('div');
+                letterElement.className = 'grid-item';
+
+                if (Math.random() < 0.5) {
+                    letterElement.innerHTML = '<img src="distractor2.png" alt="Distractor 2">';
+                } else {
+                    letterElement.innerHTML = '<img src="distractor1.png" alt="Distractor 1">';
+                }
+
+                container.appendChild(letterElement);
+            }
+
+            // 填充空白格子
+            for (let i = usedPositions.size; i < 25; i++) {
+                if (usedPositions.size >= 25) break;
+
+                let position = positions.pop();
+                while (usedPositions.has(position)) {
+                    position = positions.pop();
+                }
+                usedPositions.add(position);
+
+                const blankElement = document.createElement('div');
+                blankElement.className = 'grid-item';
+                blankElement.innerHTML = '<img src="empty.png" alt="Empty">';
+                container.appendChild(blankElement);
+            }
+
+            // 调整子元素顺序
+            const children = Array.from(container.children);
+            shuffle(children);
+            container.innerHTML = '';
+            children.forEach(child => container.appendChild(child));
+        }
+
+        function startTest() {
+            if (testIndex >= 12) {
+                console.log(JSON.stringify(results, null, 2));
+                alert('Test completed. Check console for results.');
+                return;
+            }
+
+            generateLetters();
+            startTime = performance.now();
+            testIndex++;
+
+            setTimeout(() => {
+                document.getElementById('test-container').innerHTML = '';
+                if (!results[testIndex - 1]) {
+                    results.push({ correct: !targetPresent, reactionTime: NaN });
+                }
+                setTimeout(startTest, 1000);
+            }, 2000);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                const reactionTime = performance.now() - startTime;
+                const correct = targetPresent;
+                results[testIndex - 1] = { correct, reactionTime };
+            }
+        });
+
+        function hideInstruction() {
+            document.getElementById('instruction').style.display = 'none';
+        }
+
+
+        document.getElementById('start-button').addEventListener('click', () => {
+            hideInstruction();
+            document.getElementById('start-button').style.display = 'none';
+            shuffle(trialOrder);
+            startTest();
+        });
+    </script>
+</body>
+</html>

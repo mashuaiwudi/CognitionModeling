@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记忆力测试</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            position: relative;
+        }
+        #container {
+            text-align: center;
+        }
+        #instruction, #letter, #plus, #feedback {
+            font-size: 5em;
+        }
+        #start-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        #feedback {
+            display: none;
+            margin-top: 20px;
+        }
+        .click-animation {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            pointer-events: none;
+            animation: clickEffect 0.5s ease-out forwards;
+        }
+        @keyframes clickEffect {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="instruction">
+            请判断当前字母是否与前一个的字母相同，在第二个【+】出现时，相同按【鼠标左键】，不同按【鼠标右键】
+        </div>
+        <button id="start-button">开始</button>
+        <div id="letter" style="display: none;"></div>
+        <div id="plus" style="display: none;">+</div>
+        <div id="feedback"></div>
+    </div>
+
+    <script>
+        const letters = ['B', 'F', 'K', 'H', 'M', 'Q', 'R', 'X'];
+        let sequence = [];
+        let userResponses = [];
+        let currentIndex = 0;
+
+        function getRandomLetter() {
+            const randomIndex = Math.floor(Math.random() * letters.length);
+            return Math.random() < 0.5 ? letters[randomIndex] : letters[randomIndex].toLowerCase();
+        }
+
+        function generateSequence() {
+            for (let i = 0; i < 12; i++) {
+                sequence.push(getRandomLetter());
+            }
+        }
+
+        function showInstruction() {
+            document.getElementById('instruction').style.display = 'block';
+        }
+
+        function hideInstruction() {
+            document.getElementById('instruction').style.display = 'none';
+        }
+
+        function showLetter(letter) {
+            const letterElement = document.getElementById('letter');
+            letterElement.innerText = letter;
+            letterElement.style.display = 'block';
+        }
+
+        function hideLetter() {
+            document.getElementById('letter').style.display = 'none';
+        }
+
+        function showPlus() {
+            document.getElementById('plus').style.display = 'block';
+        }
+
+        function hidePlus() {
+            document.getElementById('plus').style.display = 'none';
+        }
+
+        function showClickAnimation(event) {
+            const animationElement = document.createElement('div');
+            animationElement.className = 'click-animation';
+            animationElement.style.left = `${event.clientX - 10}px`;
+            animationElement.style.top = `${event.clientY - 10}px`;
+            document.body.appendChild(animationElement);
+
+            setTimeout(() => {
+                document.body.removeChild(animationElement);
+            }, 500);
+        }
+
+        function recordResponse(isCorrect) {
+            userResponses.push(isCorrect);
+        }
+
+        function handleUserResponse(event) {
+            if (currentIndex >= 1) {
+                const previousLetter = sequence[currentIndex - 1];
+                const currentLetter = sequence[currentIndex];
+                const isCorrect = (previousLetter.toLowerCase() === currentLetter.toLowerCase() && event.button === 0) ||
+                                  (previousLetter.toLowerCase() !== currentLetter.toLowerCase() && event.button === 2);
+                recordResponse(isCorrect);
+                showClickAnimation(event);
+            }
+            document.body.removeEventListener('mousedown', handleUserResponse);
+        }
+
+        function hideFeedback() {
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        
+        function startTest() {
+            if (currentIndex >= 12) {
+                alert('测试结束! 正确率: ' + (userResponses.filter(Boolean).length / userResponses.length * 100).toFixed(2) + '%');
+                return;
+            }
+            showLetter(sequence[currentIndex]);
+            setTimeout(() => {
+                hideLetter();
+                showPlus();
+                hideFeedback();
+                document.body.addEventListener('mousedown', handleUserResponse);
+                setTimeout(() => {
+                    hidePlus();
+                    currentIndex++;
+                    startTest();
+                }, 2000);
+            }, 500);
+        }
+
+        document.getElementById('start-button').addEventListener('click', () => {
+            hideInstruction();
+            document.getElementById('start-button').style.display = 'none';
+            generateSequence();
+            startTest();
+        });
+
+        document.body.addEventListener('contextmenu', event => event.preventDefault());
+
+        showInstruction();
+    </script>
+</body>
+</html>

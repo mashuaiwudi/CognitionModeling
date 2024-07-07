@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>选择页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            flex-direction: column;
+        }
+        #info-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="info-container">
+        <h2>用户信息</h2>
+        <p id="user-info"></p>
+    </div>
+    <button onclick="location.href='N-back/1-back.html'">跳转到1-Back</button>
+    <button onclick="location.href='N-back/2-back.html'">跳转到2-Back</button>
+    <button onclick="location.href='search/VS-5.html'">跳转到Visual Search - 5</button>
+    <button onclick="location.href='search/VS-15.html'">跳转到Visual Search - 15</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+            if (userInfo) {
+                document.getElementById('user-info').innerText = 
+                    `姓名: ${userInfo.name}, 年龄: ${userInfo.age}, 性别: ${userInfo.gender}, 编号: ${userInfo.id}, 国家: ${userInfo.country}, 职业: ${userInfo.occupation}`;
+            } else {
+                document.getElementById('user-info').innerText = '没有用户信息。';
+            }
+        });
+    </script>
+</body>
+</html>
