@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Search Test</title>
+    <style>
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            position: relative;
+        }
+        #container {
+            text-align: center;
+        }
+        #instruction, #letter, #plus, #feedback {
+            font-size: 5em;
+        }
+        #start-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        #feedback {
+            display: none;
+            margin-top: 20px;
+        }
+        .click-animation {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            pointer-events: none;
+            animation: clickEffect 0.5s ease-out forwards;
+        }
+        @keyframes clickEffect {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+
+
+
+
+        #test-container {
+            width: 250px;
+            height: 250px;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            background-color: #f0f0f0;
+            /* border: 1px solid #ccc; */
+        }
+        .grid-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        .grid-item img {
+            width: 50px;
+            height: 50px;
+        }
+
+        #start-button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="test-container"></div>
+    <div id="letter" style="display: none;"></div>
+
+    <img src="aims.png" id="instruction1" style="display: block;">
+    <div id="instruction2">
+        你需要同时完成两个任务，第一个是左侧图片中描述的是【视觉搜索】任务，第二个是【回忆任务】————请判断当前字母是否与前面间隔一个的字母相同，在第三个【T型搜索测试】出现时，相同按【鼠标左键】，不同按【鼠标右键】
+    </div>
+    <button id="start-button">开始</button>
+
+    <!-- 预加载图像 -->
+    <img src="target.png" alt="Target" style="display: none;">
+    <img src="distractor1.png" alt="Distractor 1" style="display: none;">
+    <img src="distractor2.png" alt="Distractor 2" style="display: none;">
+    <img src="empty.png" alt="Empty" style="display: none;">
+
+    
+    <script>
+        const results = [];
+        let testIndex = 0;
+        let targetPresent = false;
+        let startTime = 0;
+
+        let n_back_num = 2;
+
+        let vs_distractor_num = 15;
+
+        const targetTrials = [0, 1, 2, 3];
+        const controlTrials = Array(8).fill(null);
+        const trialOrder = [...targetTrials, ...controlTrials];
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function generateLetters() {
+            const container = document.getElementById('test-container');
+            container.innerHTML = '';
+
+            const positions = [];
+            for (let i = 0; i < 25; i++) {
+                positions.push(i);
+            }
+            shuffle(positions);
+
+            targetPresent = trialOrder[testIndex] !== null;
+
+            const usedPositions = new Set();
+
+            if (targetPresent) {
+                const targetIndex = positions.pop();
+                usedPositions.add(targetIndex);
+                const targetElement = document.createElement('div');
+                targetElement.className = 'grid-item';
+                targetElement.innerHTML = '<img src="target.png" alt="Target">';
+                container.appendChild(targetElement);
+            }
+
+            for (let i = 0; i < vs_distractor_num; i++) {
+                if (usedPositions.size >= 25) break;
+
+                let position = positions.pop();
+                while (usedPositions.has(position)) {
+                    position = positions.pop();
+                }
+                usedPositions.add(position);
+
+                const letterElement = document.createElement('div');
+                letterElement.className = 'grid-item';
+
+                if (Math.random() < 0.5) {
+                    letterElement.innerHTML = '<img src="distractor2.png" alt="Distractor 2">';
+                } else {
+                    letterElement.innerHTML = '<img src="distractor1.png" alt="Distractor 1">';
+                }
+
+                container.appendChild(letterElement);
+            }
+
+            // 填充空白格子
+            for (let i = usedPositions.size; i < 25; i++) {
+                if (usedPositions.size >= 25) break;
+
+                let position = positions.pop();
+                while (usedPositions.has(position)) {
+                    position = positions.pop();
+                }
+                usedPositions.add(position);
+
+                const blankElement = document.createElement('div');
+                blankElement.className = 'grid-item';
+                blankElement.innerHTML = '<img src="empty.png" alt="Empty">';
+                container.appendChild(blankElement);
+            }
+
+            // 调整子元素顺序
+            const children = Array.from(container.children);
+            shuffle(children);
+            container.innerHTML = '';
+            children.forEach(child => container.appendChild(child));
+        }
+
+
+
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space') {
+                const reactionTime = performance.now() - startTime;
+                const correct = targetPresent;
+                results[testIndex - 1] = { correct, reactionTime };
+            }
+        });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        const letters = ['B', 'F', 'K', 'H', 'M', 'Q', 'R', 'X'];
+        let sequence = [];
+        let userResponses = [];
+        let currentIndex = 0;
+
+        function getRandomLetter() {
+            const randomIndex = Math.floor(Math.random() * letters.length);
+            return Math.random() < 0.5 ? letters[randomIndex] : letters[randomIndex].toLowerCase();
+        }
+
+        function generateSequence() {
+            for (let i = 0; i < 12; i++) {
+                sequence.push(getRandomLetter());
+            }
+        }
+
+
+
+        function hideInstruction() {
+            document.getElementById('instruction1').style.display = 'none';
+            document.getElementById('instruction2').style.display = 'none';
+        }
+
+        function showLetter(letter) {
+            const letterElement = document.getElementById('letter');
+            letterElement.innerText = letter;
+            letterElement.style.display = 'block';
+        }
+
+        function hideLetter() {
+            document.getElementById('letter').style.display = 'none';
+        }
+
+
+
+        function showClickAnimation(event) {
+            const animationElement = document.createElement('div');
+            animationElement.className = 'click-animation';
+            animationElement.style.left = `${event.clientX - 10}px`;
+            animationElement.style.top = `${event.clientY - 10}px`;
+            document.body.appendChild(animationElement);
+
+            setTimeout(() => {
+                document.body.removeChild(animationElement);
+            }, 500);
+        }
+
+        function recordResponse(isCorrect) {
+            userResponses.push(isCorrect);
+        }
+
+        function handleUserResponse(event) {
+
+
+            if (currentIndex >= n_back_num) {
+                const previousLetter = sequence[currentIndex - n_back_num];
+
+                console.log('===================')
+                console.log(previousLetter)
+                const currentLetter = sequence[currentIndex];
+                console.log(currentLetter)
+                const isCorrect = (previousLetter.toLowerCase() === currentLetter.toLowerCase() && event.button === 0) ||
+                                  (previousLetter.toLowerCase() !== currentLetter.toLowerCase() && event.button === 2);
+                console.log(isCorrect);
+                recordResponse(isCorrect);
+                showClickAnimation(event);
+            }
+            document.body.removeEventListener('mousedown', handleUserResponse);
+
+            
+        }
+
+
+
+        function showPlus() {
+            document.getElementById('plus').style.display = 'block';
+        }
+
+        function hidePlus() {
+            document.getElementById('plus').style.display = 'none';
+        }
+
+
+
+        function startTest_vs() {
+            if (testIndex >= 12) {
+
+                alert('Test completed. Check console for results.');
+
+                console.log('Visual Search的任务表现');
+                console.log(JSON.stringify(results, null, 2));
+
+                console.log('N-back的任务表现');
+                console.log('一共测试项为: ', userResponses.length)
+                console.log('用户N-back正确数目为: ', userResponses.filter(Boolean).length)
+                console.log('N-back正确率: ' + (userResponses.filter(Boolean).length / userResponses.length * 100).toFixed(2) + '%');
+                return;
+            }
+
+            // 展示第一个T任务
+            generateLetters();
+            startTime = performance.now();
+
+            console.log('N-back  ', currentIndex)
+            console.log('VS  ', testIndex)
+
+            testIndex++;
+
+
+            document.body.addEventListener('mousedown', handleUserResponse);
+            
+
+
+            // 2秒之后，展示字母任务
+            setTimeout(() => {
+                document.getElementById('test-container').innerHTML = '';
+                if (!results[testIndex - 1]) {
+                    results.push({ correct: !targetPresent, reactionTime: NaN });
+                }
+
+                currentIndex++;
+
+
+
+                // 展示字母任务，哪怕index已经12也没事，因为下面这个函数里面会判断是否到头了，输出测试结果。
+                startTest_nback();
+                
+
+            }, 2000);
+        }
+        
+        function startTest_nback() {
+
+            if (currentIndex >= 12){
+                const letterElement = document.getElementById('letter');
+                letterElement.innerText = "Finished!";
+                letterElement.style.display = 'block';
+            }
+            else{
+                // 首先展示字母
+                showLetter(sequence[currentIndex]);
+            }
+
+
+            // 0.5秒之后，展示+，但是换成展示VS任务
+            setTimeout(() => {
+                hideLetter();
+                // showPlus();
+
+                // 展示VS任务
+                startTest_vs();
+                
+
+            }, 500);
+        }
+
+
+
+        document.body.addEventListener('contextmenu', event => event.preventDefault());
+
+
+
+        document.getElementById('start-button').addEventListener('click', () => {
+            hideInstruction();
+            document.getElementById('start-button').style.display = 'none';
+            shuffle(trialOrder);
+            generateSequence();
+            startTest_nback();
+        });
+
+
+
+    </script>
+</body>
+</html>
